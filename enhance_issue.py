@@ -50,22 +50,26 @@ def main():
 
     # Initialize Semantic Kernel
     kernel = Kernel()
-    # kernel.add_text_completion_service(
-    #     "openai-gpt",
-    #     OpenAITextCompletion(
-    #         service_id="openai-gpt",
-    #         api_key=openai_api_key,
-    #         model="gpt-3.5-turbo"  # You can change the model as needed
-    #     )
-    # )
-    kernel.add_service(
-        AzureTextCompletion(
-            api_key=openai_api_key,
-            endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-            deployment_name=os.getenv("AZURE_OPENAI_DEPLOYMENT")
-        ),
-        service_id="azure-openai"
-    )
+    # Validate Azure OpenAI environment variables
+    azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+    azure_deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT")
+    if not azure_endpoint or not azure_endpoint.startswith("https://"):
+        print("Error: Invalid or missing AZURE_OPENAI_ENDPOINT (must be a valid https URL)", file=sys.stderr)
+        sys.exit(1)
+    if not azure_deployment or len(azure_deployment.strip()) == 0:
+        print("Error: Invalid or missing AZURE_OPENAI_DEPLOYMENT", file=sys.stderr)
+        sys.exit(1)
+    try:
+        kernel.add_service(
+            AzureTextCompletion(
+                api_key=openai_api_key,
+                endpoint=azure_endpoint,
+                deployment_name=azure_deployment
+            )
+        )
+    except Exception as e:
+        print(f"Error initializing AzureTextCompletion: {e}", file=sys.stderr)
+        sys.exit(1)
 
     # Define the prompt for enhancement and label suggestion
     prompt = (
@@ -80,7 +84,11 @@ def main():
     )
 
     # Run the completion
-    response = kernel.text_completion("openai-gpt", prompt)
+    try:
+        response = kernel.text_completion(prompt)
+    except Exception as e:
+        print(f"Error running Azure OpenAI completion: {e}", file=sys.stderr)
+        sys.exit(1)
     # Parse response
     summary = ""
     labels = []
