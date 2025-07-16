@@ -2,7 +2,8 @@ import asyncio
 import os
 import sys
 from github import Github
-from semantic_kernel import Kernel, KernelArguments
+from semantic_kernel import Kernel
+from semantic_kernel.functions.kernel_arguments import KernelArguments
 from semantic_kernel.connectors.ai.open_ai import AzureChatCompletion
 from semantic_kernel.orchestration.chat_history import ChatHistory
 from semantic_kernel.connectors.ai.open_ai import AzureChatPromptExecutionSettings
