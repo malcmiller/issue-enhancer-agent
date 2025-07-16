@@ -1,8 +1,7 @@
 import os
 import sys
 from semantic_kernel import Kernel
-from semantic_kernel.connectors.ai.open_ai import OpenAITextCompletion
-from semantic_kernel.connectors.ai.azure_open_ai import AzureTextCompletion
+from semantic_kernel.connectors.ai.open_ai import AzureTextCompletion
 from github import Github
 
 def validate_inputs(github_token, openai_api_key, issue_id, issue_title, issue_body, repo_full_name):
