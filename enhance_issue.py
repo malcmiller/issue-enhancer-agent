@@ -65,6 +65,7 @@ def main():
 
         kernel.add_service(
             AzureChatCompletion(
+                service_id="azure-openai",
                 api_key=openai_api_key,
                 endpoint=azure_endpoint,
                 deployment_name=azure_deployment,
@@ -101,7 +102,7 @@ def main():
     # Run the completion
     try:
         # Use the new SK API for text completion
-        chat_service = kernel.get_service(ChatCompletionClientBase)
+        chat_service = kernel.get_service("azure-openai")
         response = chat_service.complete(messages)
 
     except Exception as e:
