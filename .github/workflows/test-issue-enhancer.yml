@@ -1,0 +1,33 @@
+name: Test Issue Enhancer Agent
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  test-issue-enhancer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t issue-enhancer-agent .
+      - name: Run Issue Enhancer Agent
+        env:
+          INPUT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          INPUT_ISSUE_ID: '1'
+          INPUT_ISSUE_TITLE: 'Test Issue Title'
+          INPUT_ISSUE_BODY: 'This is a test issue body for the workflow.'
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          docker run --rm \
+            -e INPUT_GITHUB_TOKEN \
+            -e INPUT_OPENAI_API_KEY \
+            -e INPUT_ISSUE_ID \
+            -e INPUT_ISSUE_TITLE \
+            -e INPUT_ISSUE_BODY \
+            -e GITHUB_REPOSITORY \
+            issue-enhancer-agent

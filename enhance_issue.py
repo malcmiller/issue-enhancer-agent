@@ -4,7 +4,7 @@ from semantic_kernel import Kernel
 from semantic_kernel.connectors.ai.open_ai import OpenAITextCompletion
 from github import Github
 
-def validate_inputs(github_token, openai_api_key, issue_id, issue_title, issue_body):
+def validate_inputs(github_token, openai_api_key, issue_id, issue_title, issue_body, repo_full_name):
     errors = []
     if not github_token or len(github_token.strip()) < 10:
         errors.append("Invalid or missing GitHub token.")
@@ -16,13 +16,14 @@ def validate_inputs(github_token, openai_api_key, issue_id, issue_title, issue_b
         errors.append("Missing issue title.")
     if not issue_body or len(issue_body.strip()) == 0:
         errors.append("Missing issue body.")
+    if not repo_full_name or '/' not in repo_full_name:
+        errors.append("Invalid or missing GITHUB_REPOSITORY (should be in 'owner/repo' format).")
     return errors
 
-def update_github_issue(token, issue_id, summary, labels=None):
-    # Get repo info from environment (GITHUB_REPOSITORY: owner/repo)
-    repo_full_name = os.getenv("GITHUB_REPOSITORY")
+def update_github_issue(token, issue_id, summary, labels, repo_full_name):
+    # Use repo_full_name from argument
     if not repo_full_name:
-        print("Error: GITHUB_REPOSITORY environment variable not set.", file=sys.stderr)
+        print("Error: GITHUB_REPOSITORY not provided to update_github_issue.", file=sys.stderr)
         sys.exit(1)
     g = Github(token)
     repo = g.get_repo(repo_full_name)
@@ -30,7 +31,7 @@ def update_github_issue(token, issue_id, summary, labels=None):
     issue.create_comment(f"🤖 AI-enhanced summary:\n\n{summary}")
     if labels:
         # Add labels to the issue (labels must be a list of strings)
-        issue.add_to_labels(*labels)
+        issue.add_to_labels(*labels) 
 
 def main():
     # Read inputs from environment variables (as is typical in GitHub Actions)
@@ -39,8 +40,9 @@ def main():
     issue_id = os.getenv("INPUT_ISSUE_ID")
     issue_title = os.getenv("INPUT_ISSUE_TITLE")
     issue_body = os.getenv("INPUT_ISSUE_BODY")
+    repo_full_name = os.getenv("GITHUB_REPOSITORY")
 
-    errors = validate_inputs(github_token, openai_api_key, issue_id, issue_title, issue_body)
+    errors = validate_inputs(github_token, openai_api_key, issue_id, issue_title, issue_body, repo_full_name)
     if errors:
         for error in errors:
             print(f"Error: {error}", file=sys.stderr)
@@ -84,7 +86,7 @@ def main():
         labels.append('ai-enhanced')
     print(f"::set-output name=enhanced_summary::{summary}")
     # Update the GitHub issue with the summary and AI-generated labels
-    update_github_issue(github_token, issue_id, summary, labels=labels)
+    update_github_issue(github_token, issue_id, summary, labels, repo_full_name)
 
 if __name__ == "__main__":
     main()
