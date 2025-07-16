@@ -85,7 +85,9 @@ def main():
 
     # Run the completion
     try:
-        response = kernel.text_completion(prompt)
+        # Use the new SK API for text completion
+        completion_service = kernel.get_service(AzureTextCompletion)
+        response = completion_service.complete(prompt)
     except Exception as e:
         print(f"Error running Azure OpenAI completion: {e}", file=sys.stderr)
         sys.exit(1)
