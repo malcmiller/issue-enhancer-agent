@@ -2,6 +2,7 @@ import os
 import sys
 from semantic_kernel import Kernel
 from semantic_kernel.connectors.ai.open_ai import OpenAITextCompletion
+from semantic_kernel.connectors.ai.azure_open_ai import AzureTextCompletion
 from github import Github
 
 def validate_inputs(github_token, openai_api_key, issue_id, issue_title, issue_body, repo_full_name):
@@ -50,13 +51,21 @@ def main():
 
     # Initialize Semantic Kernel
     kernel = Kernel()
-    kernel.add_text_completion_service(
-        "openai-gpt",
-        OpenAITextCompletion(
-            service_id="openai-gpt",
+    # kernel.add_text_completion_service(
+    #     "openai-gpt",
+    #     OpenAITextCompletion(
+    #         service_id="openai-gpt",
+    #         api_key=openai_api_key,
+    #         model="gpt-3.5-turbo"  # You can change the model as needed
+    #     )
+    # )
+    kernel.add_service(
+        AzureTextCompletion(
             api_key=openai_api_key,
-            model="gpt-3.5-turbo"  # You can change the model as needed
-        )
+            endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+            deployment_name=os.getenv("AZURE_OPENAI_DEPLOYMENT")
+        ),
+        service_id="azure-openai"
     )
 
     # Define the prompt for enhancement and label suggestion

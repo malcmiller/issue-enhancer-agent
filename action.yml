@@ -1,5 +1,5 @@
 name: 'Issue Enhancer Agent'
-description: 'An AI-powered GitHub Action that enhances issue descriptions, comments, and labels using Semantic Kernel and OpenAPI.'
+description: 'An AI-powered GitHub Action that enhances issue descriptions, comments, and labels using Semantic Kernel and Azure OpenAI.'
 author: 'Malcolm Miller'
 branding:
   color: 'blue'
@@ -13,7 +13,13 @@ inputs:
     description: 'GitHub token with repo access'
     required: true
   openai_api_key:
-    description: 'API key for OpenAI or other LLM provider'
+    description: 'API key for Azure OpenAI'
+    required: true
+  azure_openai_endpoint:
+    description: 'Azure OpenAI endpoint URL'
+    required: true
+  azure_openai_deployment:
+    description: 'Azure OpenAI deployment name'
     required: true
   issue_id:
     description: 'Unique ID of the GitHub issue'
