@@ -2,7 +2,7 @@ import asyncio
 import os
 import sys
 from semantic_kernel import Kernel
-from semantic_kernel.connectors.ai.open_ai import AzureTextCompletion
+from semantic_kernel.connectors.ai.open_ai import AzureChatCompletion
 from github import Github
 
 def validate_inputs(github_token, openai_api_key, issue_id, issue_title, issue_body, repo_full_name):
@@ -63,7 +63,7 @@ def main():
     try:
 
         kernel.add_service(
-            AzureTextCompletion(
+            AzureChatCompletion(
                 api_key=openai_api_key,
                 endpoint=azure_endpoint,
                 deployment_name=azure_deployment,
@@ -75,23 +75,33 @@ def main():
         sys.exit(1)
 
     # Define the prompt for enhancement and label suggestion
-    prompt = (
-        f"Given the following GitHub issue:\n"
-        f"ID: {issue_id}\n"
-        f"Title: {issue_title}\n"
-        f"Body: {issue_body}\n\n"
-        f"Generate an AI-enhanced summary or insight about the issue.\n"
-        f"Also, suggest up to 3 relevant GitHub labels (such as 'bug', 'good first issue', 'enhancement', etc.) as a comma-separated list.\n"
-        f"Format your response as:\n"
-        f"Summary: <your summary>\nLabels: <comma-separated labels>"
-    )
+    messages = [
+        {
+            "role": "system",
+            "content": "You are a helpful assistant that analyzes GitHub issues using natural language."
+        },
+        {
+            "role": "user",
+            "content": (
+                f"Given the following GitHub issue:\n"
+                f"ID: {issue_id}\n"
+                f"Title: {issue_title}\n"
+                f"Body: {issue_body}\n\n"
+                f"Generate an AI-enhanced summary or insight about the issue.\n"
+                f"Also, suggest up to 3 relevant GitHub labels (such as 'bug', 'good first issue', 'enhancement', etc.) as a comma-separated list.\n"
+                f"Format your response as:\n"
+                f"Summary: <your summary>\n"
+                f"Labels: <comma-separated labels>"
+            )
+        }
+    ]
+
 
     # Run the completion
     try:
         # Use the new SK API for text completion
-        async def get_response():
-            return await kernel.invoke_prompt(prompt)
-        response = asyncio.run(get_response())
+        response = kernel.get_service(AzureChatCompletion).complete(messages)
+
     except Exception as e:
         print(f"Error running Azure OpenAI completion: {e}", file=sys.stderr)
         sys.exit(1)
