@@ -66,7 +66,8 @@ def main():
             AzureTextCompletion(
                 api_key=openai_api_key,
                 endpoint=azure_endpoint,
-                deployment_name=azure_deployment
+                deployment_name=azure_deployment,
+                api_version="2024-12-01-preview"
             )
         )
     except Exception as e:
