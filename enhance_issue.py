@@ -86,7 +86,15 @@ def main():
     # Run the completion
     try:
         # Use the new SK API for text completion
-        completion_service = kernel.get_service(AzureTextCompletion)
+        # Get the first AzureTextCompletion service registered
+        completion_service = None
+        for service in kernel.services:
+            if isinstance(service, AzureTextCompletion):
+                completion_service = service
+                break
+        if completion_service is None:
+            print("Error: No AzureTextCompletion service found in kernel.", file=sys.stderr)
+            sys.exit(1)
         response = completion_service.complete(prompt)
     except Exception as e:
         print(f"Error running Azure OpenAI completion: {e}", file=sys.stderr)
