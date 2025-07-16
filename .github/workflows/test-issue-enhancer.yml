@@ -33,7 +33,11 @@ jobs:
           docker buildx build \
             --cache-from=type=local,src=/tmp/.buildx-cache \
             --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max \
+            --load \
             -t issue-enhancer-agent .
+
+      - name: List Docker images
+        run: docker images
 
       - name: Move cache (temp fix for Buildx)
         run: |
