@@ -5,7 +5,7 @@ from github import Github
 from semantic_kernel import Kernel
 from semantic_kernel.functions.kernel_arguments import KernelArguments
 from semantic_kernel.connectors.ai.open_ai import AzureChatCompletion
-from semantic_kernel.orchestration.chat_history import ChatHistory
+from semantic_kernel.contents import ChatHistory
 from semantic_kernel.connectors.ai.open_ai import AzureChatPromptExecutionSettings
 
 def validate_inputs(github_token, openai_api_key, issue_id, issue_title, issue_body, repo_full_name):
