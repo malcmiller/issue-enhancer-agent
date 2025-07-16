@@ -1,10 +1,11 @@
 import asyncio
 import os
 import sys
-from semantic_kernel import Kernel
-from semantic_kernel.connectors.ai.open_ai import AzureChatCompletion
-from semantic_kernel.connectors.ai.chat_completion_client_base import ChatCompletionClientBase
 from github import Github
+from semantic_kernel import Kernel, KernelArguments
+from semantic_kernel.connectors.ai.open_ai import AzureChatCompletion
+from semantic_kernel.orchestration.chat_history import ChatHistory
+from semantic_kernel.connectors.ai.open_ai import AzureChatPromptExecutionSettings
 
 def validate_inputs(github_token, openai_api_key, issue_id, issue_title, issue_body, repo_full_name):
     errors = []
@@ -23,20 +24,34 @@ def validate_inputs(github_token, openai_api_key, issue_id, issue_title, issue_b
     return errors
 
 def update_github_issue(token, issue_id, summary, labels, repo_full_name):
-    # Use repo_full_name from argument
-    if not repo_full_name:
-        print("Error: GITHUB_REPOSITORY not provided to update_github_issue.", file=sys.stderr)
-        sys.exit(1)
     g = Github(token)
     repo = g.get_repo(repo_full_name)
     issue = repo.get_issue(int(issue_id))
     issue.create_comment(f"🤖 AI-enhanced summary:\n\n{summary}")
     if labels:
-        # Add labels to the issue (labels must be a list of strings)
-        issue.add_to_labels(*labels) 
+        issue.add_to_labels(*labels)
+
+async def run_completion(kernel, messages):
+    chat_service = kernel.get_service("azure-openai")
+    history = ChatHistory()
+    for msg in messages:
+        role = msg.get("role")
+        content = msg.get("content", "")
+        if role == "system":
+            history.add_system_message(content)
+        elif role == "user":
+            history.add_user_message(content)
+
+    settings = AzureChatPromptExecutionSettings()
+    result = await chat_service.get_chat_message_content(
+        chat_history=history,
+        settings=settings,
+        kernel=kernel,
+        kernel_arguments=KernelArguments()
+    )
+    return result.content
 
 def main():
-    # Read inputs from environment variables (as is typical in GitHub Actions)
     github_token = os.getenv("INPUT_GITHUB_TOKEN")
     openai_api_key = os.getenv("INPUT_OPENAI_API_KEY")
     issue_id = os.getenv("INPUT_ISSUE_ID")
@@ -50,19 +65,18 @@ def main():
             print(f"Error: {error}", file=sys.stderr)
         sys.exit(1)
 
-    # Initialize Semantic Kernel
-    kernel = Kernel()
-    # Validate Azure OpenAI environment variables
     azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
     azure_deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT")
+
     if not azure_endpoint or not azure_endpoint.startswith("https://"):
-        print("Error: Invalid or missing AZURE_OPENAI_ENDPOINT (must be a valid https URL)", file=sys.stderr)
+        print("Error: Invalid or missing AZURE_OPENAI_ENDPOINT", file=sys.stderr)
         sys.exit(1)
-    if not azure_deployment or len(azure_deployment.strip()) == 0:
+    if not azure_deployment:
         print("Error: Invalid or missing AZURE_OPENAI_DEPLOYMENT", file=sys.stderr)
         sys.exit(1)
-    try:
 
+    kernel = Kernel()
+    try:
         kernel.add_service(
             AzureChatCompletion(
                 service_id="azure-openai",
@@ -73,10 +87,9 @@ def main():
             )
         )
     except Exception as e:
-        print(f"Error initializing AzureTextCompletion: {e}", file=sys.stderr)
+        print(f"Error initializing AzureChatCompletion: {e}", file=sys.stderr)
         sys.exit(1)
 
-    # Define the prompt for enhancement and label suggestion
     messages = [
         {
             "role": "system",
@@ -92,23 +105,17 @@ def main():
                 f"Generate an AI-enhanced summary or insight about the issue.\n"
                 f"Also, suggest up to 3 relevant GitHub labels (such as 'bug', 'good first issue', 'enhancement', etc.) as a comma-separated list.\n"
                 f"Format your response as:\n"
-                f"Summary: <your summary>\n"
-                f"Labels: <comma-separated labels>"
+                f"Summary: <your summary>\nLabels: <comma-separated labels>"
             )
         }
     ]
 
-
-    # Run the completion
     try:
-        # Use the new SK API for text completion
-        chat_service = kernel.get_service("azure-openai")
-        response = chat_service.complete(messages)
-
+        response = asyncio.run(run_completion(kernel, messages))
     except Exception as e:
         print(f"Error running Azure OpenAI completion: {e}", file=sys.stderr)
         sys.exit(1)
-    # Parse response
+
     summary = ""
     labels = []
     for line in response.splitlines():
@@ -116,11 +123,10 @@ def main():
             summary = line[len("summary:"):].strip()
         elif line.lower().startswith("labels:"):
             labels = [l.strip() for l in line[len("labels:"):].split(",") if l.strip()]
-    # Always include 'ai-enhanced' label
     if 'ai-enhanced' not in [l.lower() for l in labels]:
         labels.append('ai-enhanced')
+
     print(f"::set-output name=enhanced_summary::{summary}")
-    # Update the GitHub issue with the summary and AI-generated labels
     update_github_issue(github_token, issue_id, summary, labels, repo_full_name)
 
 if __name__ == "__main__":
