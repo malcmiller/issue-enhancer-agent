@@ -1,3 +1,4 @@
+import asyncio
 import os
 import sys
 from semantic_kernel import Kernel
@@ -87,8 +88,9 @@ def main():
     # Run the completion
     try:
         # Use the new SK API for text completion
-        # Get the first AzureTextCompletion service registered
-        response = kernel.invoke_prompt(prompt)
+        async def get_response():
+            return await kernel.invoke_prompt(prompt)
+        response = asyncio.run(get_response())
     except Exception as e:
         print(f"Error running Azure OpenAI completion: {e}", file=sys.stderr)
         sys.exit(1)
