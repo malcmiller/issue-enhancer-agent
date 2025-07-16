@@ -1,0 +1,30 @@
+name: 'Issue Enhancer Agent'
+description: 'An AI-powered GitHub Action that enhances issue descriptions, comments, and labels using Semantic Kernel and OpenAPI.'
+author: 'Malcolm Miller'
+branding:
+  color: 'blue'
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+
+inputs:
+  github_token:
+    description: 'GitHub token with repo access'
+    required: true
+  openai_api_key:
+    description: 'API key for OpenAI or other LLM provider'
+    required: true
+  issue_id:
+    description: 'Unique ID of the GitHub issue'
+    required: true
+  issue_title:
+    description: 'Title of the GitHub issue'
+    required: true
+  issue_body:
+    description: 'Main description or content of the GitHub issue'
+    required: true
+
+outputs:
+  enhanced_summary:
+    description: 'AI-generated summary or insight about the issue'
