@@ -3,6 +3,7 @@ import os
 import sys
 from semantic_kernel import Kernel
 from semantic_kernel.connectors.ai.open_ai import AzureChatCompletion
+from semantic_kernel.connectors.ai.chat_completion_client_base import ChatCompletionClientBase
 from github import Github
 
 def validate_inputs(github_token, openai_api_key, issue_id, issue_title, issue_body, repo_full_name):
@@ -100,7 +101,8 @@ def main():
     # Run the completion
     try:
         # Use the new SK API for text completion
-        response = kernel.get_service(AzureChatCompletion).complete(messages)
+        chat_service = kernel.get_service(ChatCompletionClientBase)
+        response = chat_service.complete(messages)
 
     except Exception as e:
         print(f"Error running Azure OpenAI completion: {e}", file=sys.stderr)
