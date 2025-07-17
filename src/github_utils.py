@@ -31,11 +31,44 @@ def sanitized_comment(response: dict) -> str:
 """
 
 
+def sanitized_completion_comment(response: dict) -> str:
+    not_applicable = response.get("not_applicable", False)
+
+    if not_applicable:
+        return "⚠️ The issue could not be interpreted as a well-defined user story.\n\n**Not Applicable: True**"
+
+    title = response.get("title", "").strip()
+    description = response.get("description", "").strip()
+    criteria = response.get("acceptance_criteria", [])
+    labels = response.get("labels", [])
+
+    formatted_criteria = (
+        "\n".join(f"- {c}" for c in criteria) if criteria else "_No acceptance criteria provided._"
+    )
+    formatted_labels = ", ".join(labels) if labels else "_None_"
+
+    return f"""🛠️ **AI-Rewritten Story Proposal**
+
+**Title**: {title if title else "_No title provided._"}
+**Description**: {description if description else "_No description provided._"}
+
+**Acceptance Criteria**:
+{formatted_criteria}
+
+**Suggested Labels**: {formatted_labels}
+"""
+
 def update_github_issue(token, issue_id, repo_full_name, response):
     g = Github(token)
     repo = g.get_repo(repo_full_name)
     issue = repo.get_issue(int(issue_id))
     issue.create_comment(sanitized_comment(response))
+
+def update_github_issue_completion(token, issue_id, repo_full_name, response):
+    g = Github(token)
+    repo = g.get_repo(repo_full_name)
+    issue = repo.get_issue(int(issue_id))
+    issue.create_comment(sanitized_completion_comment(response))
 
 def write_github_output(env_file, key, value):
     if env_file:

@@ -3,9 +3,47 @@ import os
 import sys
 from openai_utils import run_completion, initialize_kernel
 from validation import validate_inputs
-from github_utils import update_github_issue, write_github_output
+from github_utils import update_github_issue, update_github_issue_completion
 
 SYSTEM_PROMPT = "You are a helpful assistant that analyzes GitHub issues using natural language."
+
+def parse_completion_response(response: str) -> dict:
+    title = ""
+    description = ""
+    criteria = []
+    labels = []
+    not_applicable = False
+
+    for line in response.splitlines():
+        lower = line.lower().strip()
+
+        if lower.startswith("title:"):
+            title = line[len("title:"):].strip()
+
+        elif lower.startswith("description:"):
+            description = line[len("description:"):].strip()
+
+        elif lower.startswith("acceptance criteria:"):
+            # Start collecting criteria from the next lines
+            continue  # Header itself doesn’t contain data
+
+        elif lower.startswith("- "):
+            criteria.append(line[2:].strip())
+
+        elif lower.startswith("labels:"):
+            labels = [l.strip() for l in line[len("labels:"):].split(",") if l.strip()]
+
+        elif lower.startswith("not applicable:"):
+            raw_flag = line[len("not applicable:"):].strip().lower()
+            not_applicable = raw_flag == "true"
+
+    return {
+        "title": title,
+        "description": description,
+        "acceptance_criteria": criteria,
+        "labels": labels,
+        "not_applicable": not_applicable
+    }
 
 def parse_response(response):
     summary = ""
@@ -104,12 +142,48 @@ def main():
 
     # Parse response
     response = parse_response(response)
-
-    # Write enhanced summary to GitHub Actions environment file
-    env_file = os.getenv('GITHUB_OUTPUT')
-    write_github_output(env_file, "enhanced_summary", response["summary"])
-    write_github_output(env_file, "labels", ', '.join(response["labels"]))
     update_github_issue(inputs["github_token"], inputs["issue_id"], inputs["repo_full_name"], response)
+    
+
+    if response["ready_to_work"] is False:
+        messages = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": (
+                f"The following GitHub issue appears incomplete and is not yet ready to be worked:\n"
+                f"ID: {inputs['issue_id']}\n"
+                f"Title: {inputs['issue_title']}\n"
+                f"Body: {inputs['issue_body']}\n\n"
+
+                f"As an AI assistant, help rewrite this issue into a well-formed user story for engineering. Your response should:\n"
+                f"1. Propose an improved **title** that clearly reflects what should be built, fixed, or changed.\n"
+                f"2. Write a meaningful **description** that explains why the work matters (business value, user impact, or technical need).\n"
+                f"3. Provide specific and testable **acceptance criteria**.\n"
+                f"4. Suggest up to 3 relevant GitHub **labels** for triage purposes (e.g. 'bug', 'enhancement', 'good first issue').\n"
+                f"5. If the issue cannot reasonably be expressed as a proper user story or engineering task (e.g. it's a question or discussion), return:\n"
+                f"   Not Applicable: True\n\n"
+
+                f"Format your response like this:\n"
+                f"Title: <rewritten title>\n"
+                f"Description: <expanded explanation>\n"
+                f"Acceptance Criteria:\n"
+                f"- <criterion one>\n"
+                f"- <criterion two>\n"
+                f"- <etc...>\n"
+                f"Labels: <comma-separated labels>\n"
+                f"Not Applicable: <True/False>"
+            )}
+        ]
+        try:
+            completion_response = asyncio.run(run_completion(kernel, messages))
+        except Exception as e:
+            print(f"Error running Azure OpenAI completion: {e}", file=sys.stderr)
+            sys.exit(1)
+
+
+    if completion_response:
+        completion_data = parse_completion_response(completion_response)
+        update_github_issue_completion(inputs["github_token"], inputs["issue_id"], inputs["repo_full_name"], completion_data)
+
 
 if __name__ == "__main__":
     main()
