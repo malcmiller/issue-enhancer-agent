@@ -1,6 +1,6 @@
 FROM python:3.11.10-slim-bookworm
 
-WORKDIR /app
+WORKDIR /github/workspace
 
 # Install dependencies
 COPY requirements.txt ./
