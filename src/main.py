@@ -51,7 +51,6 @@ def main() -> None:
     response = parse_validation_response(response)
 
     create_github_issue_comment(inputs["github_token"], inputs["repo_full_name"], inputs["issue_id"], stringify_validation_response(response))
-    completion_response = None
     if response["ready_to_work"] is False:
         messages = build_messages(inputs, REWRITE_PROMPT)
         try:
@@ -60,7 +59,7 @@ def main() -> None:
             print(f"Error running Azure OpenAI completion: {e}", file=sys.stderr)
             sys.exit(1)
   
-    response = parse_rewrite_response(completion_response)
+    response = parse_rewrite_response(response)
     response["not_applicable"] = not completion_is_valid(response)
     create_github_issue_comment(inputs["github_token"], inputs["repo_full_name"], inputs["issue_id"],stringify_rewrite_response(response))
 
