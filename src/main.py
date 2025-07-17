@@ -61,7 +61,7 @@ def main() -> None:
   
     response = parse_rewrite_response(response)
     response["not_applicable"] = not completion_is_valid(response)
-    create_github_issue_comment(inputs["github_token"], inputs["repo_full_name"], inputs["issue_id"],stringify_rewrite_response(response))
+    create_github_issue_comment(inputs["github_token"], inputs["repo_full_name"], inputs["issue_id"], stringify_rewrite_response(response))
 
 
 if __name__ == "__main__":
