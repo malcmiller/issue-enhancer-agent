@@ -24,7 +24,7 @@ def main() -> None:
     inputs = {
         "github_token": os.getenv("INPUT_GITHUB_TOKEN"),
         "openai_api_key": os.getenv("INPUT_OPENAI_API_KEY"),
-        "issue_id": os.getenv("INPUT_ISSUE_ID"),
+        "issue_id": int(os.getenv("INPUT_ISSUE_ID")),
         "issue_title": os.getenv("INPUT_ISSUE_TITLE"),
         "issue_body": os.getenv("INPUT_ISSUE_BODY"),
         "azure_endpoint": os.getenv("INPUT_AZURE_OPENAI_ENDPOINT"),
