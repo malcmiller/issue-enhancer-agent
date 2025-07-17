@@ -7,14 +7,12 @@ WORKDIR /app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy main script
-COPY enhance_issue.py ./
+# Copy src folder
+COPY src/ ./src/
 
 # ✅ Debug: Confirm script and dependencies are present
 RUN echo "Listing contents of /app for verification:" && ls -l /app
-
-# Optional: See what's inside the GitHub Actions mount (will be empty at build time)
-RUN echo "Listing /github/workspace contents at build time (usually empty):" && ls -l /github/workspace || true
+RUN echo "Listing /app/src for verification:" && ls -l /app/src
 
 # Entrypoint for GitHub Action
-ENTRYPOINT ["python", "/app/enhance_issue.py"]
+ENTRYPOINT ["python", "/app/src/main.py"]
