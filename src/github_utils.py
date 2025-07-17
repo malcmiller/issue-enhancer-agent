@@ -1,3 +1,4 @@
+from os import read
 from github import Github
 
 def sanitized_comment(response: dict) -> str:
@@ -9,6 +10,7 @@ def sanitized_comment(response: dict) -> str:
     acceptance_eval = response.get("acceptance_evaluation", "").strip()
     labels = response.get("labels", [])
     completeness = response.get("completeness", {})
+    ready_to_work = response.get("ready_to_work", False)
 
     return f"""🤖 **AI-enhanced Summary & Analysis**
 
@@ -24,6 +26,8 @@ def sanitized_comment(response: dict) -> str:
 **Acceptance Criteria Evaluation**: {acceptance_eval if acceptance_eval else "_No evaluation provided._"}
 
 **Suggested Labels**: {", ".join(labels) if labels else "_None_"}
+
+**Ready To Be Worked**: {emoji(ready_to_work)}
 """
 
 

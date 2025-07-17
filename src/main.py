@@ -13,6 +13,7 @@ def parse_response(response):
     completeness = {}
     importance = ""
     acceptance_evaluation = ""
+    ready_to_work = False  # Default to False
 
     for line in response.splitlines():
         lower = line.lower()
@@ -30,15 +31,18 @@ def parse_response(response):
             importance = line[len("importance:"):].strip()
         elif lower.startswith("acceptance criteria evaluation:"):
             acceptance_evaluation = line[len("acceptance criteria evaluation:"):].strip()
+        elif lower.startswith("ready to work:"):
+            raw_flag = line[len("ready to work:"):].strip().lower()
+            ready_to_work = raw_flag == "true"
 
     return {
         "summary": summary,
         "labels": labels,
         "completeness": completeness,
         "importance": importance,
-        "acceptance_evaluation": acceptance_evaluation
+        "acceptance_evaluation": acceptance_evaluation,
+        "ready_to_work": ready_to_work
     }
-
 def main():
     # Gather inputs
     inputs = {
@@ -75,7 +79,8 @@ def main():
             f"3. Evaluate the clarity and completeness of the description. Does it explain why the story matters (e.g. business value, customer need, technical dependency)?\n"
             f"4. Analyze the acceptance criteria. Are they clear, specific, and testable via automated testing?\n"
             f"   - If you believe the acceptance criteria are not automatable, provide a warning with suggestions for making them testable.\n"
-            f"5. Suggest up to 3 relevant GitHub labels (such as 'bug', 'good first issue', 'enhancement', etc.) as a comma-separated list.\n\n"
+            f"5. Suggest up to 3 relevant GitHub labels (such as 'bug', 'good first issue', 'enhancement', etc.) as a comma-separated list.\n"
+            f"6. Based on your analysis, provide a final Boolean judgment of whether this story is ready to be worked. Assume 'ready' means: all required elements are present, purpose is clear, and acceptance criteria are testable.\n\n"
 
             f"Format your response like this:\n"
             f"Summary: <your insight>\n"
@@ -85,7 +90,8 @@ def main():
             f" - Acceptance Criteria: <Yes/No>\n"
             f"Importance: <Brief assessment of why the story matters>\n"
             f"Acceptance Criteria Evaluation: <Analysis + any testability warning>\n"
-            f"Labels: <comma-separated label list>"
+            f"Labels: <comma-separated label list>\n"
+            f"Ready to Work: <True/False>"
         )}
     ]
 
