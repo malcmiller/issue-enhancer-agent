@@ -19,6 +19,7 @@ def initialize_kernel(inputs):
                 api_version=API_VERSION
             )
         )
+        return kernel
     except Exception as e:
         print(f"Error initializing AzureChatCompletion: {e}", file=sys.stderr)
         sys.exit(1)
