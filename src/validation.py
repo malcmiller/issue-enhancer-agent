@@ -1,3 +1,5 @@
+import sys
+
 def validate_inputs(inputs):
     errors = []
     if not inputs.get("github_token") or len(inputs["github_token"].strip()) < 10:
@@ -16,4 +18,8 @@ def validate_inputs(inputs):
         errors.append("Invalid or missing AZURE_OPENAI_ENDPOINT.")
     if not inputs.get("azure_deployment"):
         errors.append("Invalid or missing AZURE_OPENAI_DEPLOYMENT.")
-    return errors
+
+    if errors:
+        for error in errors:
+            print(f"Error: {error}", file=sys.stderr)
+        sys.exit(1)

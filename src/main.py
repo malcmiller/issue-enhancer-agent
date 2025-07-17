@@ -1,14 +1,43 @@
 import asyncio
 import os
 import sys
-from semantic_kernel import Kernel
-from openai_utils import run_completion
+from openai_utils import run_completion, initialize_kernel
 from validation import validate_inputs
-from github_utils import update_github_issue
+from github_utils import update_github_issue, write_github_output
 
 SYSTEM_PROMPT = "You are a helpful assistant that analyzes GitHub issues using natural language."
-LABEL_ALWAYS = "ai-enhanced"
-API_VERSION = "2024-12-01-preview"
+
+def parse_response(response):
+    summary = ""
+    labels = []
+    completeness = {}
+    importance = ""
+    acceptance_evaluation = ""
+
+    for line in response.splitlines():
+        lower = line.lower()
+        if lower.startswith("summary:"):
+            summary = line[len("summary:"):].strip()
+        elif lower.startswith("labels:"):
+            labels = [l.strip() for l in line[len("labels:"):].split(",") if l.strip()]
+        elif lower.startswith("- title:"):
+            completeness["title"] = line.split(":")[1].strip().lower() == "yes"
+        elif lower.startswith("- description:"):
+            completeness["description"] = line.split(":")[1].strip().lower() == "yes"
+        elif lower.startswith("- acceptance criteria:"):
+            completeness["acceptance_criteria"] = line.split(":")[1].strip().lower() == "yes"
+        elif lower.startswith("importance:"):
+            importance = line[len("importance:"):].strip()
+        elif lower.startswith("acceptance criteria evaluation:"):
+            acceptance_evaluation = line[len("acceptance criteria evaluation:"):].strip()
+
+    return {
+        "summary": summary,
+        "labels": labels,
+        "completeness": completeness,
+        "importance": importance,
+        "acceptance_evaluation": acceptance_evaluation
+    }
 
 def main():
     # Gather inputs
@@ -22,30 +51,11 @@ def main():
         "azure_deployment": os.getenv("INPUT_AZURE_OPENAI_DEPLOYMENT"),
         "repo_full_name": os.getenv("GITHUB_REPOSITORY")
     }
-    errors = validate_inputs(inputs)
-    if errors:
-        for error in errors:
-            print(f"Error: {error}", file=sys.stderr)
-        sys.exit(1)
+    
+    validate_inputs(inputs)
 
     # Kernel setup
-    kernel = Kernel()
-    try:
-        kernel.add_service(
-            # ...existing code...
-            # AzureChatCompletion import and setup
-            # ...existing code...
-            __import__('semantic_kernel.connectors.ai.open_ai').connectors.ai.open_ai.AzureChatCompletion(
-                service_id="azure-openai",
-                api_key=inputs["openai_api_key"],
-                endpoint=inputs["azure_endpoint"],
-                deployment_name=inputs["azure_deployment"],
-                api_version=API_VERSION
-            )
-        )
-    except Exception as e:
-        print(f"Error initializing AzureChatCompletion: {e}", file=sys.stderr)
-        sys.exit(1)
+    kernel = initialize_kernel(inputs)
 
     # Prompt construction
     messages = [
@@ -55,10 +65,27 @@ def main():
             f"ID: {inputs['issue_id']}\n"
             f"Title: {inputs['issue_title']}\n"
             f"Body: {inputs['issue_body']}\n\n"
-            f"Generate an AI-enhanced summary or insight about the issue.\n"
-            f"Also, suggest up to 3 relevant GitHub labels (such as 'bug', 'good first issue', 'enhancement', etc.) as a comma-separated list.\n"
-            f"Format your response as:\n"
-            f"Summary: <your summary>\nLabels: <comma-separated labels>"
+
+            f"Review this issue as a potential user story for engineering work. In your response:\n"
+            f"1. Provide an AI-enhanced summary or insight about the story.\n"
+            f"2. Confirm whether the following elements are present:\n"
+            f"   - A title\n"
+            f"   - A description\n"
+            f"   - Acceptance criteria\n"
+            f"3. Evaluate the clarity and completeness of the description. Does it explain why the story matters (e.g. business value, customer need, technical dependency)?\n"
+            f"4. Analyze the acceptance criteria. Are they clear, specific, and testable via automated testing?\n"
+            f"   - If you believe the acceptance criteria are not automatable, provide a warning with suggestions for making them testable.\n"
+            f"5. Suggest up to 3 relevant GitHub labels (such as 'bug', 'good first issue', 'enhancement', etc.) as a comma-separated list.\n\n"
+
+            f"Format your response like this:\n"
+            f"Summary: <your insight>\n"
+            f"Completeness:\n"
+            f" - Title: <Yes/No>\n"
+            f" - Description: <Yes/No>\n"
+            f" - Acceptance Criteria: <Yes/No>\n"
+            f"Importance: <Brief assessment of why the story matters>\n"
+            f"Acceptance Criteria Evaluation: <Analysis + any testability warning>\n"
+            f"Labels: <comma-separated label list>"
         )}
     ]
 
@@ -70,24 +97,13 @@ def main():
         sys.exit(1)
 
     # Parse response
-    summary = ""
-    labels = []
-    for line in response.splitlines():
-        if line.lower().startswith("summary:"):
-            summary = line[len("summary:"):].strip()
-        elif line.lower().startswith("labels:"):
-            labels = [l.strip() for l in line[len("labels:"):].split(",") if l.strip()]
-    if LABEL_ALWAYS not in [l.lower() for l in labels]:
-        labels.append(LABEL_ALWAYS)
+    response = parse_response(response)
 
     # Write enhanced summary to GitHub Actions environment file
     env_file = os.getenv('GITHUB_OUTPUT')
-    if env_file:
-        with open(env_file, 'a') as f:
-            f.write(f"enhanced_summary={summary}\n")
-    else:
-        print(f"enhanced_summary={summary}")
-    update_github_issue(inputs["github_token"], inputs["issue_id"], summary, labels, inputs["repo_full_name"])
+    write_github_output(env_file, "enhanced_summary", response["summary"])
+    write_github_output(env_file, "labels", ', '.join(response["labels"]))
+    update_github_issue(inputs["github_token"], inputs["issue_id"], inputs["repo_full_name"], response)
 
 if __name__ == "__main__":
     main()
