@@ -1,22 +1,37 @@
 from github import Github
 
-def update_github_issue(token, issue_id, repo_full_name, updates):
+def sanitized_comment(response: dict) -> str:
+    def emoji(checked: bool) -> str:
+        return "✅" if checked else "❌"
+
+    summary = response.get("summary", "").strip()
+    importance = response.get("importance", "").strip()
+    acceptance_eval = response.get("acceptance_evaluation", "").strip()
+    labels = response.get("labels", [])
+    completeness = response.get("completeness", {})
+
+    return f"""🤖 **AI-enhanced Summary & Analysis**
+
+**Summary**: {summary if summary else "_No summary provided._"}
+
+**Completeness**
+- Title: {emoji(completeness.get("title", False))}
+- Description: {emoji(completeness.get("description", False))}
+- Acceptance Criteria: {emoji(completeness.get("acceptance_criteria", False))}
+
+**Importance**: {importance if importance else "_No importance explanation found._"}
+
+**Acceptance Criteria Evaluation**: {acceptance_eval if acceptance_eval else "_No evaluation provided._"}
+
+**Suggested Labels**: {", ".join(labels) if labels else "_None_"}
+"""
+
+
+def update_github_issue(token, issue_id, repo_full_name, response):
     g = Github(token)
     repo = g.get_repo(repo_full_name)
     issue = repo.get_issue(int(issue_id))
-    issue.create_comment(f"""🤖 **AI-enhanced Summary & Analysis**
-    **Summary**: {updates["summary"]}
-
-    **Completeness**
-    - Title: {"✅" if updates["completeness"].get("title") else "❌"}
-    - Description: {"✅" if updates["completeness"].get("description") else "❌"}
-    - Acceptance Criteria: {"✅" if updates["completeness"].get("acceptance_criteria") else "❌"}
-
-    **Importance**: {updates["importance"]}
-    **Acceptance Criteria Evaluation**: {updates["acceptance_evaluation"]}
-
-    **Suggested Labels**: {", ".join(updates["labels"])}
-    """)
+    issue.create_comment(sanitized_comment(response))
 
 def write_github_output(env_file, key, value):
     if env_file:
