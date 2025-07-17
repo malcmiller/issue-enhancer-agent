@@ -159,7 +159,7 @@ def main():
                 f"2. Write a meaningful **description** that explains why the work matters (business value, user impact, or technical need).\n"
                 f"3. Provide specific and testable **acceptance criteria**.\n"
                 f"4. Suggest up to 3 relevant GitHub **labels** for triage purposes (e.g. 'bug', 'enhancement', 'good first issue').\n"
-                f"5. If the issue cannot reasonably be expressed as a proper user story or engineering task (e.g. it's a question or discussion), return:\n"
+                f"5. If you are unable to confidently generate all three core elements (title, description, and acceptance criteria), return:\n"
                 f"   Not Applicable: True\n\n"
 
                 f"Format your response like this:\n"
