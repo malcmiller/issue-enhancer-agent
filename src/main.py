@@ -160,7 +160,7 @@ def main():
                 f"3. Provide specific and testable **acceptance criteria**.\n"
                 f"4. Suggest up to 3 relevant GitHub **labels** for triage purposes (e.g. 'bug', 'enhancement', 'good first issue').\n"
                 f"5. If you are unable to confidently generate all three core elements (title, description, and acceptance criteria), return:\n"
-                f"   Not Applicable: True\n\n"
+                f"   Not Applicable: True And nothing else\n\n"
 
                 f"Format your response like this:\n"
                 f"Title: <rewritten title>\n"
