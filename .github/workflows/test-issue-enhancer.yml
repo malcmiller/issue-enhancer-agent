@@ -53,7 +53,7 @@ jobs:
           INPUT_ISSUE_ID: '1'
           INPUT_ISSUE_TITLE: 'Test Issue Title'
           INPUT_ISSUE_BODY: 'This is a test issue body for the workflow.'
-          INPUT_GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           docker run --rm \
             -e INPUT_GITHUB_TOKEN \
@@ -63,5 +63,5 @@ jobs:
             -e INPUT_ISSUE_ID \
             -e INPUT_ISSUE_TITLE \
             -e INPUT_ISSUE_BODY \
-            -e INPUT_GITHUB_REPOSITORY \
+            -e GITHUB_REPOSITORY \
             issue-enhancer-agent

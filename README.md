@@ -83,7 +83,7 @@ You can use Issue Enhancer Agent directly from the GitHub Marketplace in your wo
      -e INPUT_ISSUE_ID=1 \
      -e INPUT_ISSUE_TITLE="Test Issue" \
      -e INPUT_ISSUE_BODY="Test body" \
-     -e INPUT_GITHUB_REPOSITORY=owner/repo \
+     -e GITHUB_REPOSITORY=owner/repo \
      issue-enhancer-agent
    ```
 
