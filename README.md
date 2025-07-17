@@ -78,12 +78,12 @@ You can use Issue Enhancer Agent directly from the GitHub Marketplace in your wo
    docker run --rm \
      -e INPUT_GITHUB_TOKEN=your_token \
      -e INPUT_OPENAI_API_KEY=your_openai_key \
-     -e AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/ \
-     -e AZURE_OPENAI_DEPLOYMENT=your_deployment \
+     -e INPUT_AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/ \
+     -e INPUT_AZURE_OPENAI_DEPLOYMENT=your_deployment \
      -e INPUT_ISSUE_ID=1 \
      -e INPUT_ISSUE_TITLE="Test Issue" \
      -e INPUT_ISSUE_BODY="Test body" \
-     -e GITHUB_REPOSITORY=owner/repo \
+     -e INPUT_GITHUB_REPOSITORY=owner/repo \
      issue-enhancer-agent
    ```
 

@@ -72,9 +72,9 @@ def main():
         "issue_id": os.getenv("INPUT_ISSUE_ID"),
         "issue_title": os.getenv("INPUT_ISSUE_TITLE"),
         "issue_body": os.getenv("INPUT_ISSUE_BODY"),
-        "repo_full_name": os.getenv("GITHUB_REPOSITORY"),
-        "azure_endpoint": os.getenv("AZURE_OPENAI_ENDPOINT"),
-        "azure_deployment": os.getenv("AZURE_OPENAI_DEPLOYMENT")
+        "repo_full_name": os.getenv("INPUT_GITHUB_REPOSITORY"),
+        "azure_endpoint": os.getenv("INPUT_AZURE_OPENAI_ENDPOINT"),
+        "azure_deployment": os.getenv("INPUT_AZURE_OPENAI_DEPLOYMENT")
     }
     errors = validate_inputs(inputs)
     if errors:
