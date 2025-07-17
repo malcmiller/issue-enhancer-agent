@@ -2,7 +2,7 @@ import asyncio
 import os
 import sys
 from openai_utils import run_completion, initialize_kernel
-from validation import validate_inputs
+from validation import validate_inputs, completion_is_valid
 from github_utils import update_github_issue, update_github_issue_completion
 
 SYSTEM_PROMPT = "You are a helpful assistant that analyzes GitHub issues using natural language."
@@ -160,7 +160,7 @@ def main():
                 f"3. Provide specific and testable **acceptance criteria**.\n"
                 f"4. Suggest up to 3 relevant GitHub **labels** for triage purposes (e.g. 'bug', 'enhancement', 'good first issue').\n"
                 f"5. If you are unable to confidently generate all three core elements (title, description, and acceptance criteria), return:\n"
-                f"   Not Applicable: True And nothing else\n\n"
+                f"   Not Applicable: True\n\n"
 
                 f"Format your response like this:\n"
                 f"Title: <rewritten title>\n"
@@ -182,6 +182,7 @@ def main():
 
     if completion_response:
         completion_data = parse_completion_response(completion_response)
+        completion_data["not_applicable"] = not completion_is_valid(completion_data)
         update_github_issue_completion(inputs["github_token"], inputs["issue_id"], inputs["repo_full_name"], completion_data)
 
 
