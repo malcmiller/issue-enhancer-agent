@@ -133,4 +133,6 @@ class RewriteResponse:
             f"**Description**: {self.description if self.description else '_No update provided._'}\n\n"
             "**Acceptance Criteria**\n"
             f"{section_list(self.acceptance_criteria)}\n"
+            
+            "Reply \"apply changes\" to apply these updates.\n"
         )

@@ -1,0 +1,61 @@
+name: Apply Enhancements on Comment
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  apply-enhancement:
+    if: contains(github.event.comment.body, 'apply changes')
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build Docker image with cache
+        run: |
+          docker buildx build \
+            --cache-from=type=local,src=/tmp/.buildx-cache \
+            --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max \
+            --load \
+            -t issue-enhancer-agent .
+
+      - name: Move cache (temp fix for Buildx)
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+      - name: Run Enhancer in Apply Mode
+        env:
+          INPUT_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          INPUT_AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          INPUT_AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
+          INPUT_ISSUE_ID: ${{ github.event.issue.number }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_COMMENT_ID: ${{ github.event.comment.id }}
+        run: |
+          docker run --rm \
+            -e INPUT_GITHUB_TOKEN \
+            -e INPUT_OPENAI_API_KEY \
+            -e INPUT_AZURE_OPENAI_ENDPOINT \
+            -e INPUT_AZURE_OPENAI_DEPLOYMENT \
+            -e INPUT_ISSUE_ID \
+            -e GITHUB_REPOSITORY \
+            -e GITHUB_COMMENT_ID \
+            issue-enhancer-agent
