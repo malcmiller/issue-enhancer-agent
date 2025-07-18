@@ -11,8 +11,12 @@ class ValidationResponse:
         self.ready_to_work: bool = False
 
         # Parse response during initialization
+        buffer = ""
+        parsing_evaluation = False
+
         for line in self.response.splitlines():
-            lower = line.lower()
+            lower = line.lower().strip()
+            
             if lower.startswith("summary:"):
                 self.summary = line[len("summary:") :].strip()
             elif lower.startswith("labels:"):
@@ -32,13 +36,22 @@ class ValidationResponse:
             elif lower.startswith("importance:"):
                 self.importance = line[len("importance:") :].strip()
             elif lower.startswith("acceptance criteria evaluation:"):
-                self.acceptance_evaluation = line[
-                    len("acceptance criteria evaluation:") :
-                ].strip()
+                parsing_evaluation = True
+                buffer = line[len("acceptance criteria evaluation:") :].strip()
             elif lower.startswith("ready to work:"):
                 self.ready_to_work = (
                     line[len("ready to work:") :].strip().lower() == "true"
                 )
+            elif parsing_evaluation:
+                if lower.startswith("labels:") or lower.startswith("ready to work:"):
+                    parsing_evaluation = False
+                else:
+                    buffer += "\n" + line.strip()
+
+        # finalize buffered content
+        if buffer:
+            self.acceptance_evaluation = buffer.strip()
+            
 
     def as_dict(self) -> Dict[str, Any]:
         return {
