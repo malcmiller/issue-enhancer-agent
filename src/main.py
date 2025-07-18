@@ -38,21 +38,21 @@ def main() -> None:
         print(f"Error running Azure OpenAI completion: {e}", file=sys.stderr)
         sys.exit(1)
 
-    print(f"Response from Azure OpenAI: {response}")
+
     response = ValidationResponse(response)
 
-    # create_github_issue_comment(
-    #     inputs["github_token"],
-    #     inputs["repo_full_name"],
-    #     inputs["issue_id"],
-    #     response.as_markdown_str(),
-    # )
+    create_github_issue_comment(
+        inputs["github_token"],
+        inputs["repo_full_name"],
+        inputs["issue_id"],
+        response.as_markdown_str(),
+    )
 
     if response.ready_to_work: 
         return 0
-    print(response.completeness)
+
     messages = build_rewrite_message(issue["number"], issue["title"], issue["body"], response.completeness)
-    print(messages)
+
     try:
         response = asyncio.run(run_completion(kernel, messages))
     except Exception as e:
@@ -61,12 +61,12 @@ def main() -> None:
 
     response = RewriteResponse(response)
 
-    # create_github_issue_comment(
-    #     inputs["github_token"],
-    #     inputs["repo_full_name"],
-    #     inputs["issue_id"],
-    #     response.as_markdown_str(),
-    # )
+    create_github_issue_comment(
+        inputs["github_token"],
+        inputs["repo_full_name"],
+        inputs["issue_id"],
+        response.as_markdown_str(),
+    )
 
 
 if __name__ == "__main__":
