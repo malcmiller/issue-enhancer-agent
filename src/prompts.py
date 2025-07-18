@@ -1,3 +1,5 @@
+from typing import Dict
+
 SYSTEM_PROMPT = "You are a helpful assistant that analyzes GitHub issues using natural language."
 
 def build_validation_message(issue_id: str, issue_title: str, issue_body: str) -> list:
