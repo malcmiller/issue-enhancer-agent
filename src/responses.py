@@ -132,7 +132,7 @@ class RewriteResponse:
                 else "_None provided._"
             )
 
-        if self.not_applicable():
+        if self.not_applicable:
             return (
                 "❌ **AI Rewrite Not Applicable**\n\n"
                 "The AI has determined that this issue is not suitable for rewriting.\n"
