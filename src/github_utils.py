@@ -49,14 +49,20 @@ def write_github_output(env_file: Optional[str], key: str, value: str) -> None:
     else:
         print(f"{key}={value}")
 
-def get_github_comment(token: str, repo_full_name: str, comment_id: int):
+def get_github_comment(token: str, repo_full_name: str, issue_number: int, comment_id: int):
     try:
         g = Github(token)
-        comment = g.get_issue_comment(comment_id)
-        return comment
+        repo = g.get_repo(repo_full_name)
+        issue = repo.get_issue(issue_number)
+        comments = issue.get_comments()
+        for comment in comments:
+            if comment.id == comment_id:
+                return comment
+        raise Exception(f"Comment with id {comment_id} not found")
     except Exception as e:
         print(f"Error fetching GitHub comment: {type(e).__name__}: {e}")
         raise
+
 
 def update_github_issue(token: str, repo_full_name: str, issue_number: int, title=None, body=None, labels=None):
     try:
