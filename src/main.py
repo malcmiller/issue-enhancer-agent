@@ -98,8 +98,47 @@ def update_issue_body_with_rewrite(original_body: str, new_description: str, new
 
     return original_body
 
+def update_issue_body_with_rewrite(original_body: str, new_description: str, new_acceptance_criteria: list[str]) -> str:
+    import re
 
-def handle_apply_comment(token: str, repo_full_name: str, issue_number: int, comment_id: int) -> None:
+    criteria_text = "\n".join(f"- {item}" for item in new_acceptance_criteria) if new_acceptance_criteria else ""
+
+    description_pattern = re.compile(
+        r"(Description:\s*\n)(.*?)(\n\n|\Z)", re.IGNORECASE | re.DOTALL
+    )
+    acceptance_pattern = re.compile(
+        r"(Acceptance Criteria:\s*\n)(.*?)(\n\n|\Z)", re.IGNORECASE | re.DOTALL
+    )
+
+    if new_description:
+        if description_pattern.search(original_body):
+            original_body = description_pattern.sub(r"\1" + new_description + r"\3", original_body)
+        else:
+            original_body += f"\n\nDescription:\n{new_description}"
+
+    if criteria_text:
+        if acceptance_pattern.search(original_body):
+            original_body = acceptance_pattern.sub(r"\1" + criteria_text + r"\3", original_body)
+        else:
+            original_body += f"\n\nAcceptance Criteria:\n{criteria_text}"
+
+    return original_body
+
+
+def handle_apply_comment() -> None:
+    """Handles applying enhancements on user comment."""
+    inputs = {
+        "token": os.getenv("INPUT_GITHUB_TOKEN"),
+        "issue_id": int(os.getenv("INPUT_ISSUE_ID")),
+        "comment_id": int(os.getenv("GITHUB_COMMENT_ID")),
+        "repo_full_name": os.getenv("GITHUB_REPOSITORY"),
+    }
+
+    token = inputs["token"]
+    issue_number = inputs["issue_id"]
+    comment_id = inputs["comment_id"]
+    repo_full_name = inputs["repo_full_name"]
+
     print(f"🛠 Handling apply comment for issue #{issue_number} and comment {comment_id}")
 
     # Fetch current issue and comment from GitHub
@@ -144,6 +183,7 @@ def handle_apply_comment(token: str, repo_full_name: str, issue_number: int, com
     except Exception as e:
         print(f"❌ Failed to update issue: {type(e).__name__}: {e}", file=sys.stderr)
         sys.exit(1)
+
 
 
 if __name__ == "__main__":
