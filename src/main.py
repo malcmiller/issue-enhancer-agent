@@ -39,13 +39,13 @@ def main() -> None:
         sys.exit(1)
 
     response = ValidationResponse(response)
-
-    create_github_issue_comment(
-        inputs["github_token"],
-        inputs["repo_full_name"],
-        inputs["issue_id"],
-        response.as_markdown_str(),
-    )
+    print(response.as_markdown_str())
+    # create_github_issue_comment(
+    #     inputs["github_token"],
+    #     inputs["repo_full_name"],
+    #     inputs["issue_id"],
+    #     response.as_markdown_str(),
+    # )
 
     if response.ready_to_work: 
         return 0
@@ -58,13 +58,13 @@ def main() -> None:
         sys.exit(1)
 
     response = RewriteResponse(response)
-
-    create_github_issue_comment(
-        inputs["github_token"],
-        inputs["repo_full_name"],
-        inputs["issue_id"],
-        response.as_markdown_str(),
-    )
+    print(response.as_markdown_str())
+    # create_github_issue_comment(
+    #     inputs["github_token"],
+    #     inputs["repo_full_name"],
+    #     inputs["issue_id"],
+    #     response.as_markdown_str(),
+    # )
 
 
 if __name__ == "__main__":
