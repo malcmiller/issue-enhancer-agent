@@ -112,15 +112,6 @@ class RewriteResponse:
                     line[len("not applicable:") :].strip().lower() == "true"
                 )
 
-    def is_complete(self) -> bool:
-        """Check if the response contains all required elements."""
-        return (
-            self.not_applicable is False and
-            bool(self.title) and
-            bool(self.description) and
-            bool(self.acceptance_criteria)
-        )
-
     def as_dict(self) -> Dict[str, Any]:
         """Convert the response to a dictionary format."""
         return {
@@ -141,7 +132,7 @@ class RewriteResponse:
                 else "_None provided._"
             )
 
-        if not self.is_complete():
+        if self.not_applicable():
             return (
                 "❌ **AI Rewrite Not Applicable**\n\n"
                 "The AI has determined that this issue is not suitable for rewriting.\n"
