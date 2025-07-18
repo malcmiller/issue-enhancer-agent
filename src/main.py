@@ -6,18 +6,23 @@ from openai_utils import run_completion, initialize_kernel
 from validation import validate_inputs, completion_is_valid
 from github_utils import create_github_issue_comment
 from prompts import SYSTEM_PROMPT, VALIDATION_PROMPT, REWRITE_PROMPT
-from response_utils import parse_validation_response, stringify_validation_response, stringify_rewrite_response, parse_rewrite_response
+from responses import ValidationResponse, RewriteResponse
+
 
 def build_messages(inputs: Dict[str, Any], prompt_template: str) -> list:
     """Construct prompt messages for the AI using a given template."""
     return [
         {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": prompt_template.format(
-            issue_id=inputs['issue_id'],
-            issue_title=inputs['issue_title'],
-            issue_body=inputs['issue_body']
-        )}
+        {
+            "role": "user",
+            "content": prompt_template.format(
+                issue_id=inputs["issue_id"],
+                issue_title=inputs["issue_title"],
+                issue_body=inputs["issue_body"],
+            ),
+        },
     ]
+
 
 def main() -> None:
     """Main entry point for the issue enhancer agent."""
@@ -29,7 +34,7 @@ def main() -> None:
         "issue_body": os.getenv("INPUT_ISSUE_BODY"),
         "azure_endpoint": os.getenv("INPUT_AZURE_OPENAI_ENDPOINT"),
         "azure_deployment": os.getenv("INPUT_AZURE_OPENAI_DEPLOYMENT"),
-        "repo_full_name": os.getenv("GITHUB_REPOSITORY")
+        "repo_full_name": os.getenv("GITHUB_REPOSITORY"),
     }
 
     validate_inputs(inputs)
@@ -48,9 +53,15 @@ def main() -> None:
         sys.exit(1)
 
     # Parse response
-    response = parse_validation_response(response)
+    response = ValidationResponse(response)
 
-    create_github_issue_comment(inputs["github_token"], inputs["repo_full_name"], inputs["issue_id"], stringify_validation_response(response))
+    create_github_issue_comment(
+        inputs["github_token"],
+        inputs["repo_full_name"],
+        inputs["issue_id"],
+        response.as_markdown_str(),
+    )
+    
     if response["ready_to_work"] is False:
         messages = build_messages(inputs, REWRITE_PROMPT)
         try:
@@ -58,10 +69,16 @@ def main() -> None:
         except Exception as e:
             print(f"Error running Azure OpenAI completion: {e}", file=sys.stderr)
             sys.exit(1)
-  
-    response = parse_rewrite_response(response)
+
+    response = RewriteResponse(response)
     response["not_applicable"] = not completion_is_valid(response)
-    create_github_issue_comment(inputs["github_token"], inputs["repo_full_name"], inputs["issue_id"], stringify_rewrite_response(response))
+
+    create_github_issue_comment(
+        inputs["github_token"],
+        inputs["repo_full_name"],
+        inputs["issue_id"],
+        response.as_markdown_str(),
+    )
 
 
 if __name__ == "__main__":
