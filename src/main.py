@@ -5,23 +5,8 @@ from typing import Any, Dict
 from openai_utils import run_completion, initialize_kernel
 from validation import validate_inputs
 from github_utils import get_github_issue, create_github_issue_comment
-from prompts import SYSTEM_PROMPT, VALIDATION_PROMPT, REWRITE_PROMPT
+from prompts import build_validation_message, build_rewrite_message
 from responses import ValidationResponse, RewriteResponse
-
-
-def build_messages(gh_issue: Dict[str, Any], prompt_template: str) -> list:
-    """Construct prompt messages for the AI using a given template."""
-    return [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {
-            "role": "user",
-            "content": prompt_template.format(
-                issue_id=gh_issue["number"],
-                issue_title=gh_issue["title"],
-                issue_body=gh_issue["body"],
-            ),
-        },
-    ]
 
 
 def main() -> None:
@@ -44,7 +29,7 @@ def main() -> None:
     kernel = initialize_kernel(inputs)
 
     # Prompt construction
-    messages = build_messages(issue, VALIDATION_PROMPT)
+    messages = build_validation_message(issue.number, issue.title, issue.body)
 
     # Run completion
     try:
@@ -65,8 +50,7 @@ def main() -> None:
     if response.ready_to_work: 
         return 0
     
-
-    messages = build_messages(issue, REWRITE_PROMPT)
+    messages = build_rewrite_message(issue.number, issue.title, issue.body, response.completeness)
     try:
         response = asyncio.run(run_completion(kernel, messages))
     except Exception as e:
