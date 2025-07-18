@@ -143,7 +143,7 @@ def handle_apply_comment() -> None:
 
     # Fetch current issue and comment from GitHub
     issue = get_github_issue(token, repo_full_name, issue_number)
-    comment = get_github_comment(token, repo_full_name, comment_id)
+    comment = get_github_comment(token, repo_full_name, issue_number, comment_id)
 
     # Parse rewrite from comment body
     rewrite = RewriteResponse.from_comment(comment.body)
