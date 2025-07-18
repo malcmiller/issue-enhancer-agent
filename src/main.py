@@ -29,7 +29,7 @@ def main() -> None:
     kernel = initialize_kernel(inputs)
 
     # Prompt construction
-    messages = build_validation_message(issue.number, issue.title, issue.body)
+    messages = build_validation_message(inputs["issue_id"], issue.title, issue.body)
 
     # Run completion
     try:
@@ -50,7 +50,7 @@ def main() -> None:
     if response.ready_to_work: 
         return 0
     
-    messages = build_rewrite_message(issue.number, issue.title, issue.body, response.completeness)
+    messages = build_rewrite_message(inputs["issue_id"], issue.title, issue.body, response.completeness)
     try:
         response = asyncio.run(run_completion(kernel, messages))
     except Exception as e:
