@@ -38,6 +38,7 @@ def main() -> None:
         print(f"Error running Azure OpenAI completion: {e}", file=sys.stderr)
         sys.exit(1)
 
+    print(f"Response from Azure OpenAI: {response}")
     response = ValidationResponse(response)
 
     # create_github_issue_comment(
