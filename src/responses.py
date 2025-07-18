@@ -1,6 +1,5 @@
 from typing import Dict, Any, List
 
-
 class ValidationResponse:
     def __init__(self, response: str):
         self.response = response
