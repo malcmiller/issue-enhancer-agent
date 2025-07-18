@@ -49,7 +49,7 @@ def main() -> None:
 
     if response.ready_to_work: 
         return 0
-    
+    print(response.completeness)
     messages = build_rewrite_message(issue["number"], issue["title"], issue["body"], response.completeness)
     print(messages)
     try:
