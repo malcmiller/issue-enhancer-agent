@@ -12,6 +12,7 @@ def get_github_issue(
         issue = repo.get_issue(issue_id)
         return {
             "id": issue.id,
+            "number": issue.number,
             "title": issue.title,
             "body": issue.body,
             "state": issue.state,

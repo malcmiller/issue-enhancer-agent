@@ -8,6 +8,9 @@ on:
 
 jobs:
   test-issue-enhancer:
+    strategy:
+      matrix:
+        issue_id: [1, 2, 3]
     permissions:
       issues: write
       contents: read
@@ -50,9 +53,7 @@ jobs:
           INPUT_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           INPUT_AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
           INPUT_AZURE_OPENAI_DEPLOYMENT: ${{ secrets.AZURE_OPENAI_DEPLOYMENT }}
-          INPUT_ISSUE_ID: '1'
-          INPUT_ISSUE_TITLE: 'Test Issue Title'
-          INPUT_ISSUE_BODY: 'This is a test issue body for the workflow.'
+          INPUT_ISSUE_ID: ${{ matrix.issue_id }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
           docker run --rm \
@@ -61,7 +62,5 @@ jobs:
             -e INPUT_AZURE_OPENAI_ENDPOINT \
             -e INPUT_AZURE_OPENAI_DEPLOYMENT \
             -e INPUT_ISSUE_ID \
-            -e INPUT_ISSUE_TITLE \
-            -e INPUT_ISSUE_BODY \
             -e GITHUB_REPOSITORY \
             issue-enhancer-agent
