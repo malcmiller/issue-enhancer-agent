@@ -134,7 +134,7 @@ class RewriteResponse:
             "**Acceptance Criteria**\n"
             f"{section_list(self.acceptance_criteria)}\n"
             
-            "Reply \"apply changes\" to apply these updates.\n"
+            "\n Reply \"apply changes\" to apply these updates.\n"
         )
         
     @classmethod
