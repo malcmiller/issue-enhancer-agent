@@ -49,38 +49,28 @@ def write_github_output(env_file: Optional[str], key: str, value: str) -> None:
     else:
         print(f"{key}={value}")
 
-def get_all_issue_comments(token: str, repo_full_name: str, issue_id: int) -> list:
-    """Fetch all comments from a GitHub issue."""
+def get_github_comment(token: str, repo_full_name: str, comment_id: int):
     try:
         g = Github(token)
         repo = g.get_repo(repo_full_name)
-        issue = repo.get_issue(issue_id)
-        return list(issue.get_comments())
+        comment = repo.get_issue_comment(comment_id)
+        return comment
     except Exception as e:
-        print(f"Error fetching issue comments: {type(e).__name__}: {e}")
-        return []
+        print(f"Error fetching GitHub comment: {type(e).__name__}: {e}")
+        raise
 
-
-def update_github_issue(
-    token: str,
-    repo_full_name: str,
-    issue_id: int,
-    title: str = None,
-    body: str = None,
-    labels: list = None,
-) -> None:
-    """Update title, body, or labels of a GitHub issue."""
+def update_github_issue(token: str, repo_full_name: str, issue_number: int, title=None, body=None, labels=None):
     try:
         g = Github(token)
         repo = g.get_repo(repo_full_name)
-        issue = repo.get_issue(issue_id)
+        issue = repo.get_issue(issue_number)
 
-        if title or body:
-            issue.edit(title=title or issue.title, body=body or issue.body)
-
+        if title is not None:
+            issue.edit(title=title)
+        if body is not None:
+            issue.edit(body=body)
         if labels is not None:
-            label_objs = [repo.get_label(name) for name in labels]
-            issue.set_labels(*label_objs)
-
+            issue.edit(labels=labels)
     except Exception as e:
         print(f"Error updating GitHub issue: {type(e).__name__}: {e}")
+        raise

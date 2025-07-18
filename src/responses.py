@@ -105,6 +105,10 @@ class RewriteResponse:
                 self.not_applicable = (
                     line[len("not applicable:"):].strip().lower() == "true"
                 )
+                
+    def normalize_text(text: str) -> str:
+        # Lowercase, strip whitespace and markdown-like underscores or asterisks
+        return text.lower().strip(" _*")
 
     def as_dict(self) -> Dict[str, Any]:
         """Convert the response to a dictionary format."""
@@ -168,13 +172,13 @@ class RewriteResponse:
 
         instance = cls(response=comment_body)
 
-        if title.lower() == "no update provided.":
+        if title.lower().strip(" _*") == "no update provided.":
             print("🟡 Skipping title update (marked as 'No update provided.')")
         else:
             instance.title = title
             print(f"✅ Applying title update: {title}")
 
-        if description.lower() == "no update provided.":
+        if description.lower().strip(" _*") == "no update provided.":
             print("🟡 Skipping description update (marked as 'No update provided.')")
         else:
             instance.description = description

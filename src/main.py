@@ -6,7 +6,7 @@ from validation import validate_inputs
 from github_utils import (
     get_github_issue,
     create_github_issue_comment,
-    get_all_issue_comments,
+    get_github_comment,
     update_github_issue,
 )
 from prompts import build_validation_message, build_rewrite_message
@@ -72,63 +72,78 @@ def handle_new_issue():
     )
 
 
-def handle_apply_comment():
-    token = os.getenv("INPUT_GITHUB_TOKEN")
-    repo = os.getenv("GITHUB_REPOSITORY")
-    issue_id = int(os.getenv("INPUT_ISSUE_ID"))
-    trigger_comment_id = int(os.getenv("GITHUB_COMMENT_ID"))  # user’s apply comment ID
+def update_issue_body_with_rewrite(original_body: str, new_description: str, new_acceptance_criteria: list[str]) -> str:
+    import re
 
-    comments = get_all_issue_comments(token, repo, issue_id)
-    if not comments:
-        print("No comments found.")
-        return
+    criteria_text = "\n".join(f"- {item}" for item in new_acceptance_criteria) if new_acceptance_criteria else ""
 
-    # Filter only comments before the trigger comment (by ID)
-    prior_comments = [c for c in comments if c.id < trigger_comment_id]
-
-    # Find the latest bot rewrite comment before the apply comment
-    bot_comment = None
-    for comment in reversed(prior_comments):
-        if "ai-enhanced rewrite" in comment.body.lower():
-            # Non-brittle way of looking for the bot comment
-            bot_comment = comment
-            break
-
-    if not bot_comment:
-        print("No valid suggestion comment found to apply.")
-        return
-
-    parsed = RewriteResponse.from_comment(bot_comment.body)
-    if not parsed:
-        print("Failed to parse bot comment for changes.")
-        return
-
-    # Filter out fields with 'No update provided.' placeholders
-    updates = {}
-    for field in ["title", "body", "labels"]:
-        val = getattr(parsed, field, None)
-        if val is None:
-            continue
-        if isinstance(val, str) and val.strip().lower() == "no update provided.":
-            continue
-        if isinstance(val, list) and (len(val) == 0 or all(s.lower() == "no update provided." for s in val)):
-            continue
-        updates[field] = val
-
-    if not updates:
-        print("No actual updates found in the suggestion comment.")
-        return
-
-    update_github_issue(
-        token,
-        repo,
-        issue_id,
-        title=updates.get("title"),
-        body=updates.get("body"),
-        labels=updates.get("labels")
+    description_pattern = re.compile(
+        r"(Description:\s*\n)(.*?)(\n\n|\Z)", re.IGNORECASE | re.DOTALL
+    )
+    acceptance_pattern = re.compile(
+        r"(Acceptance Criteria:\s*\n)(.*?)(\n\n|\Z)", re.IGNORECASE | re.DOTALL
     )
 
-    print("Changes applied to issue.")
+    if new_description:
+        if description_pattern.search(original_body):
+            original_body = description_pattern.sub(r"\1" + new_description + r"\3", original_body)
+        else:
+            original_body += f"\n\nDescription:\n{new_description}"
+
+    if criteria_text:
+        if acceptance_pattern.search(original_body):
+            original_body = acceptance_pattern.sub(r"\1" + criteria_text + r"\3", original_body)
+        else:
+            original_body += f"\n\nAcceptance Criteria:\n{criteria_text}"
+
+    return original_body
+
+
+def handle_apply_comment(token: str, repo_full_name: str, issue_number: int, comment_id: int) -> None:
+    print(f"🛠 Handling apply comment for issue #{issue_number} and comment {comment_id}")
+
+    # Fetch current issue and comment from GitHub
+    issue = get_github_issue(token, repo_full_name, issue_number)
+    comment = get_github_comment(token, repo_full_name, comment_id)
+
+    # Parse rewrite from comment body
+    rewrite = RewriteResponse.from_comment(comment.body)
+
+    # Normalize title check helper
+    def normalize_text(text: str) -> str:
+        return text.lower().strip(" _*")
+
+    # Prepare updated title if valid
+    new_title = None
+    if rewrite.title and normalize_text(rewrite.title) != "no update provided.":
+        new_title = rewrite.title
+        print(f"✅ Will update title to: {new_title}")
+    else:
+        print("🟡 Skipping title update")
+
+    # Update issue body with description and acceptance criteria
+    new_body = issue["body"]
+    new_body = update_issue_body_with_rewrite(
+        original_body=new_body,
+        new_description=rewrite.description if rewrite.description and normalize_text(rewrite.description) != "no update provided." else None,
+        new_acceptance_criteria=rewrite.acceptance_criteria,
+    )
+    print("✅ Issue body updated with new description and acceptance criteria")
+
+    # Push update to GitHub
+    try:
+        update_github_issue(
+            token=token,
+            repo_full_name=repo_full_name,
+            issue_number=issue_number,
+            title=new_title,  # None means no change
+            body=new_body,
+            labels=None,  # No label changes here
+        )
+        print(f"🎉 Successfully applied rewrite updates to issue #{issue_number}")
+    except Exception as e:
+        print(f"❌ Failed to update issue: {type(e).__name__}: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
