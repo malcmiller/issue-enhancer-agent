@@ -37,7 +37,6 @@ def main() -> None:
 
 
     issue = get_github_issue(inputs["github_token"], inputs["repo_full_name"], inputs["issue_id"])
-    print(issue)
 
     validate_inputs(inputs)
 
@@ -55,6 +54,7 @@ def main() -> None:
         sys.exit(1)
 
     # Parse response
+    print(response)
     response = ValidationResponse(response)
     print(response.as_dict())
     # create_github_issue_comment(
