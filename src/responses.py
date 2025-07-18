@@ -133,4 +133,61 @@ class RewriteResponse:
             f"**Description**: {self.description if self.description else '_No update provided._'}\n\n"
             "**Acceptance Criteria**\n"
             f"{section_list(self.acceptance_criteria)}\n"
+            
+            "\n Reply \"apply changes\" to apply these updates.\n"
         )
+        
+    @classmethod
+    def from_comment(cls, comment_body: str) -> "RewriteResponse":
+        """Create a RewriteResponse from a GitHub comment, skipping 'No update provided' fields, with logs."""
+        title = ""
+        description = ""
+        acceptance_criteria: List[str] = []
+        not_applicable = False
+
+        lines = comment_body.splitlines()
+        in_criteria = False
+
+        for line in lines:
+            stripped = line.strip()
+            lower = stripped.lower()
+
+            if lower.startswith("**title**:"):
+                title = stripped[len("**title**:"):].strip()
+            elif lower.startswith("**description**:"):
+                description = stripped[len("**description**:"):].strip()
+            elif lower.startswith("**acceptance criteria**"):
+                in_criteria = True
+            elif in_criteria:
+                if stripped.startswith("- "):
+                    acceptance_criteria.append(stripped[2:].strip())
+                elif stripped == "" or stripped.lower().startswith("reply "):
+                    in_criteria = False
+            elif lower.startswith("not applicable:"):
+                not_applicable = stripped[len("not applicable:"):].strip().lower() == "true"
+
+        instance = cls(response=comment_body)
+
+        if title.lower() == "no update provided.":
+            print("🟡 Skipping title update (marked as 'No update provided.')")
+        else:
+            instance.title = title
+            print(f"✅ Applying title update: {title}")
+
+        if description.lower() == "no update provided.":
+            print("🟡 Skipping description update (marked as 'No update provided.')")
+        else:
+            instance.description = description
+            print(f"✅ Applying description update: {description}")
+
+        if acceptance_criteria:
+            instance.acceptance_criteria = acceptance_criteria
+            print(f"✅ Applying {len(acceptance_criteria)} acceptance criteria updates.")
+        else:
+            print("🟡 No acceptance criteria updates found.")
+
+        instance.not_applicable = not_applicable
+        if not_applicable:
+            print("❌ Rewrite marked as not applicable.")
+
+        return instance
