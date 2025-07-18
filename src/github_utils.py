@@ -52,8 +52,7 @@ def write_github_output(env_file: Optional[str], key: str, value: str) -> None:
 def get_github_comment(token: str, repo_full_name: str, comment_id: int):
     try:
         g = Github(token)
-        repo = g.get_repo(repo_full_name)
-        comment = repo.get_issue_comment(comment_id)
+        comment = g.get_issue_comment(comment_id)
         return comment
     except Exception as e:
         print(f"Error fetching GitHub comment: {type(e).__name__}: {e}")
