@@ -11,7 +11,6 @@ from github_utils import (
 )
 from prompts import build_validation_message, build_rewrite_message
 from responses import ValidationResponse, RewriteResponse
-from parser import parse_rewrite_comment  # assumes you’ve created this
 
 
 def main() -> None:
@@ -99,7 +98,7 @@ def handle_apply_comment():
         print("No valid suggestion comment found to apply.")
         return
 
-    parsed = parse_rewrite_comment(bot_comment.body)
+    parsed = RewriteResponse.from_comment(bot_comment.body)
     if not parsed:
         print("Failed to parse bot comment for changes.")
         return
