@@ -145,5 +145,4 @@ class RewriteResponse:
             "**Acceptance Criteria**\n"
             f"{section_list(self.acceptance_criteria)}\n\n"
             f"**Labels**: {', '.join(self.labels) if self.labels else '_None_'}\n\n"
-            f"**Not Applicable**: {'✅' if self.not_applicable else '❌'}\n"
         )
