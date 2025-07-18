@@ -23,11 +23,3 @@ def validate_inputs(inputs):
         for error in errors:
             print(f"Error: {error}", file=sys.stderr)
         sys.exit(1)
-
-
-def completion_is_valid(data: dict) -> bool:
-    return (
-        bool(data.get("title")) and
-        bool(data.get("description")) and
-        bool(data.get("acceptance_criteria"))
-    )

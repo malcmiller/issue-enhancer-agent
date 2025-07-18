@@ -3,8 +3,8 @@ import os
 import sys
 from typing import Any, Dict
 from openai_utils import run_completion, initialize_kernel
-from validation import validate_inputs, completion_is_valid
-from github_utils import create_github_issue_comment
+from validation import validate_inputs
+from github_utils import get_github_issue, create_github_issue_comment
 from prompts import SYSTEM_PROMPT, VALIDATION_PROMPT, REWRITE_PROMPT
 from responses import ValidationResponse, RewriteResponse
 
@@ -36,6 +36,10 @@ def main() -> None:
         "azure_deployment": os.getenv("INPUT_AZURE_OPENAI_DEPLOYMENT"),
         "repo_full_name": os.getenv("GITHUB_REPOSITORY"),
     }
+
+
+    issue = get_github_issue(inputs["github_token"], inputs["repo_full_name"], inputs["issue_id"])
+    print(issue)
 
     validate_inputs(inputs)
 
