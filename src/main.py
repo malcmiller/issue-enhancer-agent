@@ -61,8 +61,8 @@ def main() -> None:
         inputs["issue_id"],
         response.as_markdown_str(),
     )
-    
-    if response["ready_to_work"] is False:
+
+    if response.ready_to_work is False:
         messages = build_messages(inputs, REWRITE_PROMPT)
         try:
             response = asyncio.run(run_completion(kernel, messages))
@@ -71,8 +71,7 @@ def main() -> None:
             sys.exit(1)
 
     response = RewriteResponse(response)
-    response["not_applicable"] = not completion_is_valid(response)
-
+    
     create_github_issue_comment(
         inputs["github_token"],
         inputs["repo_full_name"],
