@@ -106,7 +106,7 @@ def handle_apply_comment():
     # Filter out fields with 'No update provided.' placeholders
     updates = {}
     for field in ["title", "body", "labels"]:
-        val = parsed.get(field)
+        val = getattr(parsed, field, None)
         if val is None:
             continue
         if isinstance(val, str) and val.strip().lower() == "no update provided.":
